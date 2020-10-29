@@ -1,16 +1,11 @@
-// const cartButton = document.querySelector("#cart-button");
-// const modal = document.querySelector(".modal");
-// const close = document.querySelector(".close");
+"use strict";
+import Swiper from 'https://unpkg.com/swiper/swiper-bundle.esm.browser.min.js';
 
-// cartButton.addEventListener("click", toggleModal);
-// close.addEventListener("click", toggleModal);
+const RED_COLOR = "#ff0000";
 
-// function toggleModal() {
-//   modal.classList.toggle("is-open");
-// } 
-
-//day 1
-
+const cartButton = document.querySelector("#cart-button");
+const modal = document.querySelector(".modal");
+const close = document.querySelector(".close");
 const buttonAuth = document.querySelector(".button-auth");
 const modalAuth = document.querySelector(".modal-auth");
 const closeAuth = document.querySelector(".close-auth");
@@ -23,8 +18,13 @@ const containerPromo = document.querySelector(".container-promo");
 const restaurants = document.querySelector(".restaurants");
 const menu = document.querySelector(".menu");
 const logo = document.querySelector(".logo");
+const cardsMenu = document.querySelector(".cards-menu");
 
 let login = localStorage.getItem("delivery");
+
+function toggleModal() {
+  modal.classList.toggle("is-open");
+} 
 
 function toogleModalAuth() {
   modalAuth.classList.toggle("is-open");
@@ -98,8 +98,6 @@ function notAuthorized() {
   })
 }
 
-buttonAuth.addEventListener("click", clearForm);
-
 function checkAuth() {
   if (login) {
     authorized();
@@ -107,9 +105,6 @@ function checkAuth() {
     notAuthorized();
   }
 }
-
-checkAuth();
-
 
 function createCardRestaurant() {
   
@@ -136,23 +131,88 @@ cardsRestaurants.insertAdjacentHTML("beforeend", card)
   
 }
 
-createCardRestaurant();
+function createCardGood() {
+  const card = document.createElement("div");
+  card.className = "card";
+
+  card.insertAdjacentHTML("beforeend", `
+        <img src="img/pizza-plus/pizza-classic.jpg" alt="image" class="card-image"/>
+        <div class="card-text">
+          <div class="card-heading">
+            <h3 class="card-title card-title-reg">Пицца Классика</h3>
+          </div>
+          <div class="card-info">
+            <div class="ingredients">Соус томатный, сыр «Моцарелла», сыр «Пармезан», ветчина, салями,
+            грибы.
+            </div>
+          </div> 
+          <div class="card-buttons">
+            <button class="button button-primary button-add-cart">
+              <span class="button-card-text">В корзину</span>
+              <span class="button-cart-svg"></span>
+            </button>
+            <strong class="card-price-bold">510 ₽</strong>
+          </div>
+        </div>      
+  `);
+
+  cardsMenu.insertAdjacentElement("beforeend", card);
+
+}
 
 function openGoods(event) {
   const target = event.target;
 
+  if (login) {   
+  
   const restaurant = target.closest(".card-restaurant");
 
-  if (restaurant) {
-    containerPromo.classList.add("hide");
-    restaurants.classList.add("hide"); 
-    menu.classList.remove("hide");
-  }
+      if (restaurant) {
+        cardsMenu.textContent = "";
+        containerPromo.classList.add("hide");
+        restaurants.classList.add("hide"); 
+        menu.classList.remove("hide");
+
+
+        createCardGood();
+        createCardGood();
+        createCardGood();
+      }
+  } else {
+    toogleModalAuth();
+}
 }
 
+cartButton.addEventListener("click", toggleModal);
+
+close.addEventListener("click", toggleModal);
+
 cardsRestaurants.addEventListener("click", openGoods);
+
 logo.addEventListener("click", function () {
   containerPromo.classList.remove("hide");
-  restaurants.classList.remove("hide"); 
+  restaurants.classList.remove("hide");
   menu.classList.add("hide");
+});
+
+buttonAuth.addEventListener("click", clearForm);
+
+checkAuth();
+
+createCardRestaurant();
+createCardRestaurant();
+createCardRestaurant();
+
+//Slider
+
+new Swiper(".swiper-container", {
+  slidePerView: 1,
+  loop: true,
+  autoplay: true,
+  effect: "coverflow",
+ scrollbar: {
+    el: ".swiper-scrollbar",
+    draggable: true,
+  },
+ 
 })
