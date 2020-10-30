@@ -173,6 +173,7 @@ button {
     border-radius: 10px;
     padding: 68px 70px;
     margin-bottom: 56px;
+    min-height: 350px;
 }
 
 .pizza {
