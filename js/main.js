@@ -1,6 +1,19 @@
 "use strict";
 import Swiper from "https://unpkg.com/swiper/swiper-bundle.esm.browser.min.js";
 
+//Slider
+
+const swiper = new Swiper(".swiper-container", {
+  slidePerView: 1,
+  loop: true,
+  autoplay: true,
+  effect: "coverflow",
+  scrollbar: {
+    el: ".swiper-scrollbar",
+    draggable: true,
+  },
+});
+
 const RED_COLOR = "#ff0000";
 
 const cartButton = document.querySelector("#cart-button");
@@ -24,13 +37,25 @@ const restaurantRating = document.querySelector(".rating");
 const restaurantPrice = document.querySelector(".price");
 const restaurantCategory = document.querySelector(".category");
 const inputSearch = document.querySelector(".input-search");
+const inputAddress = document.querySelector(".input-address");
 const modalBody = document.querySelector(".modal-body");
 const modalPrice = document.querySelector(".modal-pricetag");
 const buttonClearCart = document.querySelector(".clear-cart");
 
 let login = localStorage.getItem("delivery");
 
-const cart = [];
+const cart = JSON.parse(localStorage.getItem(`delivery_${login}`)) || [];
+
+function saveCart() {
+  localStorage.setItem(`delivery_${login}`, JSON.stringify(cart));
+}
+
+function downloadCart() {
+  if (localStorage.getItem(`delivery_${login}`)) {
+    const data = JSON.parse(localStorage.getItem(`delivery_${login}`));
+    cart.push(...data);
+  }
+}
 
 const getData = async function (url) {
   const response = await fetch(url);
@@ -67,9 +92,17 @@ function clearForm() {
   loginInput.style.borderColor = "";
 }
 
+function returnMain() {
+  containerPromo.classList.remove("hide");
+  swiper.init();
+  restaurants.classList.remove("hide");
+  menu.classList.add("hide");
+}
+
 function authorized() {
   function logOut() {
-    login = "";
+    login = null;
+    cart.length = 0;
     localStorage.removeItem("delivery");
     buttonAuth.style.display = "";
     userName.style.display = "";
@@ -77,6 +110,7 @@ function authorized() {
     cartButton.style.display = "";
     buttonOut.removeEventListener("click", logOut);
     checkAuth();
+    returnMain();
   }
 
   console.log("Авторизован");
@@ -101,7 +135,7 @@ function notAuthorized() {
       login = loginInput.value;
       localStorage.setItem("delivery", login);
       toogleModalAuth();
-
+      downloadCart();
       buttonAuth.removeEventListener("click", toogleModalAuth);
       closeAuth.removeEventListener("click", toogleModalAuth);
       logInForm.removeEventListener("submit", logIn);
@@ -205,6 +239,7 @@ function openGoods(event) {
     if (restaurant) {
       cardsMenu.textContent = "";
       containerPromo.classList.add("hide");
+      swiper.destroy(false);
       restaurants.classList.add("hide");
       menu.classList.remove("hide");
 
@@ -249,6 +284,8 @@ function addToCart(event) {
         count: 1,
       });
     }
+
+    saveCart();
   }
 }
 
@@ -276,6 +313,7 @@ function renderCart() {
   }, 0);
 
   modalPrice.textContent = totalPrice + "₽";
+  saveCart();
 }
 
 function changeCount(event) {
@@ -312,6 +350,7 @@ function init() {
   buttonClearCart.addEventListener("click", function () {
     cart.length = 0;
     renderCart();
+    toggleModal();
   });
 
   modalBody.addEventListener("click", changeCount);
@@ -324,6 +363,7 @@ function init() {
 
   logo.addEventListener("click", function () {
     containerPromo.classList.remove("hide");
+    swiper.init();
     restaurants.classList.remove("hide");
     menu.classList.add("hide");
   });
@@ -331,19 +371,6 @@ function init() {
   buttonAuth.addEventListener("click", clearForm);
 
   checkAuth();
-
-  //Slider
-
-  new Swiper(".swiper-container", {
-    slidePerView: 1,
-    loop: true,
-    autoplay: true,
-    effect: "coverflow",
-    scrollbar: {
-      el: ".swiper-scrollbar",
-      draggable: true,
-    },
-  });
 
   inputSearch.addEventListener("keypress", function (event) {
     if (event.charCode === 13) {
@@ -357,6 +384,7 @@ function init() {
         }, 1500);
         return;
       }
+
       getData("./db/partners.json")
         .then(function (data) {
           return data.map(function (partner) {
@@ -374,6 +402,7 @@ function init() {
               });
 
               containerPromo.classList.add("hide");
+              swiper.destroy(false);
               restaurants.classList.add("hide");
               menu.classList.remove("hide");
 
@@ -382,11 +411,61 @@ function init() {
               restaurantPrice.textContent = "";
               restaurantCategory.textContent = "разная кухня";
 
-              data.forEach(createCardGood);
+              resultSearch.forEach(createCardGood);
             });
           });
         });
     }
+  });
+
+  inputAddress.addEventListener("keyup", function (event) {
+    const value = event.target.value.trim();
+
+    if (!value && event.charCode === 13) {
+      event.target.style.backgroundColor = RED_COLOR;
+      event.target.value = "";
+      setTimeout(function () {
+        event.target.style.backgroundColor = "";
+      }, 1500);
+      return;
+    }
+
+    if (!/^[А-Яа-яЁё]$/.test(event.key)) {
+      return;
+    }
+
+    if (value.length < 3) return;
+
+    getData("./db/partners.json")
+      .then(function (data) {
+        return data.map(function (partner) {
+          return partner.products;
+        });
+      })
+      .then(function (linksProduct) {
+        cardsMenu.textContent = "";
+
+        linksProduct.forEach(function (link) {
+          getData(`./db/${link}`).then(function (data) {
+            const resultSearch = data.filter(function (item) {
+              const name = item.name.toLowerCase();
+              return name.includes(value.toLowerCase());
+            });
+
+            containerPromo.classList.add("hide");
+            swiper.destroy(false);
+            restaurants.classList.add("hide");
+            menu.classList.remove("hide");
+
+            restaurantTitle.textContent = "Результат поиска";
+            restaurantRating.textContent = "";
+            restaurantPrice.textContent = "";
+            restaurantCategory.textContent = "разная кухня";
+
+            resultSearch.forEach(createCardGood);
+          });
+        });
+      });
   });
 }
 
